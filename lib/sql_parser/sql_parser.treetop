@@ -123,6 +123,16 @@ grammar Sql
         }]
       end
     }
+    /
+    assignment_field space ('in' / 'IN') required_space ("(" / "( ") inlist_items (" )" / ")") {
+      def node
+        [{
+          :operator => :in, 
+          :field => assignment_field.text_value.to_sym,
+          :values => inlist_items.values
+        }]
+      end
+    }
   end
 
   rule conditional_operator
@@ -159,6 +169,18 @@ grammar Sql
     }
   end
 
+  rule inlist_items
+    inlist_item space [,]+ space inlist_items <SqlParser::InListItemsNode>
+    /
+    inlist_item
+  end
+
+  rule inlist_item
+    !keyword "'" [^']* "'" <SqlParser::InListStringItemNode>
+    /
+    !keyword [0-9]+ <SqlParser::InListNumberItemNode>
+  end
+
   rule items
     item space [,]+ space items <SqlParser::ItemsNode>
     /
@@ -170,7 +192,7 @@ grammar Sql
   end
 
   rule keyword
-    'select' / 'from'
+    'select' / 'from' / 'in'
   end
 
   rule required_space
@@ -179,5 +201,9 @@ grammar Sql
 
   rule space
     ' '*
+  end
+
+  rule word
+    [a-z_0-9]+
   end
 end
